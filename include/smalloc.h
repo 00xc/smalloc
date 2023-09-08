@@ -27,10 +27,16 @@ typedef struct {
 
 /* Initialize the fields of the allocator */
 int smalloc_init(smalloc_t* alloc, const pa_t* pa);
+
 /* Allocate a block of the specified size */
 void* smalloc_alloc(smalloc_t* alloc, size_t len);
+
+/* Reallocate a previously allocated block */
+void* smalloc_realloc(smalloc_t* sm, void* oldptr, size_t len);
+
 /* Free a previously allocated block */
 void smalloc_free(smalloc_t* alloc, void* ptr);
+
 /* Release resources back to the page allocator. `alloc` may not be
    used after calling this function */
 void smalloc_release(smalloc_t* alloc);

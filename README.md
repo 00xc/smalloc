@@ -47,7 +47,7 @@ Keep in mind by default this will generate a trace of over 1GB, and the script w
 
 ## Usage ##
 
-The API is very simple and consists of 4 functions and 2 structures. Refer to the library header ([smalloc.h](include/smalloc.h)) or the example program ([example.c](src/example.c)) for further details.
+The API is very simple and consists of 5 functions and 2 structures. Refer to the library header ([smalloc.h](include/smalloc.h)) or the example program ([example.c](src/example.c)) for further details.
 
 ## Design ## 
 
