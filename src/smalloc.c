@@ -91,7 +91,7 @@ static int node_free(node_t* node, void* uptr) {
 	const uintptr_t page = (uintptr_t)node->page;
 	const uintptr_t ptr = (uintptr_t)uptr;
 
-	/* Check if this pointer does belongs to this node */
+	/* Check if this pointer belongs to this node */
 	if (page_align(page) != page_align(ptr))
 		return 1;
 
