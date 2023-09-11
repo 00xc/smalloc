@@ -12,7 +12,7 @@
 #define ALIGNMENT_BITS 5
 
 static inline uintptr_t align_to(uintptr_t addr, size_t align) {
-	return addr & ~(align - 1);	
+	return addr & ~(align - 1);
 }
 
 static inline uintptr_t align_up(uintptr_t addr, size_t align) {
@@ -94,7 +94,7 @@ static int node_free(node_t* node, void* uptr) {
 	/* Check if this pointer does belongs to this node */
 	if (page_align(page) != page_align(ptr))
 		return 1;
-	
+
 	/* Check pointer alignment */
 	assert(align_to(ptr, node->bsize) == ptr);
 
@@ -140,7 +140,7 @@ static node_t* slab_next_node(slab_t* slab, node_t* node) {
 	   otherwise request a new one */
 	if (page_align(next_end) == page) {
 		new_node = (node_t*)next_start;
-	} else {				
+	} else {
 		new_node = (node_t*)pa->alloc_page(pa->opaque);
 		if (!new_node)
 			return NULL;
@@ -300,7 +300,7 @@ void* smalloc_realloc(smalloc_t* sm, void* oldptr, size_t len) {
 	newptr = smalloc_alloc(sm, len);
 	if (!newptr)
 		return NULL;
-	
+
 	/* Copy the old data and free the old block */
 	memcpy(newptr, oldptr, old_len < len ? old_len : len);
 	smalloc_free(sm, oldptr);
