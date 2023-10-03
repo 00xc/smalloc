@@ -59,7 +59,7 @@ static void node_set_full(node_t* node) {
 	node->page = (void*)((uintptr_t)node->page | 1);
 }
 
-static int node_is_full(node_t* node) {
+static int node_is_full(const node_t* node) {
 	return ((uintptr_t)node->page & 1) != 0;
 }
 
@@ -127,7 +127,7 @@ static node_t* slab_next_node(slab_t* slab, node_t* node) {
 	const uintptr_t end = (uintptr_t)node + sizeof(*node);
 	const uintptr_t next_start = align_up(end, 8);
 	const uintptr_t next_end = next_start + sizeof(*node);
-	pa_t* pa = slab->pa;
+	pa_t* const pa = slab->pa;
 	void* mem;
 	node_t* new_node;
 
@@ -186,7 +186,7 @@ static void slab_free(slab_t* slab, void* ptr, node_t* node) {
 
 static void slab_release(slab_t* slab) {
 	node_t* node = slab->head;
-	pa_t* pa = slab->pa;
+	pa_t* const pa = slab->pa;
 	node_t* last_page_head = NULL;
 	void* user_page;
 
