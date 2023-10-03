@@ -142,8 +142,10 @@ static node_t* slab_next_node(slab_t* slab, node_t* node) {
 		new_node = (node_t*)next_start;
 	} else {
 		new_node = (node_t*)pa->alloc_page(pa->opaque);
-		if (!new_node)
+		if (!new_node) {
+			pa->free_page(pa->opaque, mem);
 			return NULL;
+		}
 	}
 
 	node_init(new_node, mem, node->bsize, node->idx + 1);
