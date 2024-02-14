@@ -27,6 +27,10 @@ static inline uintptr_t page_offset(uintptr_t addr) {
 	return addr & (PAGE_SIZE - 1);
 }
 
+static inline int page_aligned(uintptr_t addr) {
+	return page_offset(addr) == 0;
+}
+
 /* A structure managing a user data page in blocks of a determined
    size (bsize) */
 struct _node_t {
@@ -224,12 +228,31 @@ static allocation_t* user2alloc(void* ptr) {
 	return (allocation_t*)((uintptr_t)ptr - offsetof(allocation_t, user));
 }
 
-static size_t round_alloc_size(size_t len) {
-	return align_up(sizeof(allocation_t) + len, MIN_ALIGNMENT);
-}
-
 static size_t size2idx(size_t len) {
 	return 63 - __lzcnt64((len - 1) >> ALIGNMENT_BITS) + 1;
+}
+
+/* The rounded allocation size for a user-supplied length */
+static inline size_t round_alloc_size(size_t len) {
+	size_t rlen;
+
+	rlen = align_up(sizeof(allocation_t) + len, MIN_ALIGNMENT);
+	if (size2idx(rlen) < 8)
+		return rlen;
+
+	rlen = align_up(len, PAGE_SIZE);
+	if (rlen / PAGE_SIZE == 1)
+		return PAGE_SIZE;
+
+	return SIZE_MAX;
+}
+
+/* The size of an existing allocation, from the given user pointer */
+static inline size_t userptr_alloc_size(void* userptr) {
+	if (page_aligned((uintptr_t)userptr))
+		return PAGE_SIZE;
+
+	return user2alloc(userptr)->node->bsize;
 }
 
 int smalloc_init(smalloc_t* alloc, const pa_t* pa) {
@@ -268,10 +291,13 @@ void* smalloc_alloc(smalloc_t* sm, size_t len) {
 		return NULL;
 
 	rlen = round_alloc_size(len);
-	idx = size2idx(rlen);
-	if (idx >= 8)
+	if (rlen == SIZE_MAX)
+		return NULL;
+
+	if (rlen == PAGE_SIZE)
 		return smalloc_big_alloc(sm, len);
 
+	idx = size2idx(rlen);
 	ptr = (allocation_t*)slab_alloc(sm->slabs + idx, &node);
 	if (!ptr)
 		return NULL;
@@ -292,20 +318,24 @@ void* smalloc_realloc(smalloc_t* sm, void* oldptr, size_t len) {
 		return NULL;
 	}
 
-	/* If the new allocation fits in the old slab, simply reuse it */
-	old_len = user2alloc(oldptr)->node->bsize;
+	/* The rounded size for the new allocation */
 	rlen = round_alloc_size(len);
-	if (size2idx(rlen) == size2idx(old_len))
-		return oldptr;
-
-	/* Prepare the new block */
-	newptr = smalloc_alloc(sm, len);
-	if (!newptr)
+	if (rlen == SIZE_MAX)
 		return NULL;
 
-	/* Copy the old data and free the old block */
-	memcpy(newptr, oldptr, old_len < len ? old_len : len);
-	smalloc_free(sm, oldptr);
+	/* The size for the old allocation */
+	old_len = userptr_alloc_size(oldptr);
+
+	/* If the new allocation fits in the old slot, simply reuse it */
+	if (rlen == old_len)
+		return oldptr;
+
+	/* Prepare the new block, copy data and free old block */
+	newptr = smalloc_alloc(sm, rlen);
+	if (newptr) {
+		memcpy(newptr, oldptr, old_len < len ? old_len : len);
+		smalloc_free(sm, oldptr);
+	}
 
 	return newptr;
 }
@@ -317,13 +347,15 @@ void smalloc_free(smalloc_t* sm, void* userptr) {
 	if (!userptr)
 		return;
 
+	if (page_aligned((uintptr_t)userptr)) {
+		smalloc_big_free(sm, userptr);
+		return;
+	}
+
 	ptr = user2alloc(userptr);
 	idx = size2idx(ptr->node->bsize);
-
 	if (idx < 8)
 		slab_free(sm->slabs + idx, ptr, ptr->node);
-	else
-		smalloc_big_free(sm, userptr);
 }
 
 void smalloc_release(smalloc_t* sm) {
