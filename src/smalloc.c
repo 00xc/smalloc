@@ -11,6 +11,8 @@
 #define MIN_ALIGNMENT 32
 #define ALIGNMENT_BITS 5
 
+#define ARR_SIZE(_x) (sizeof(_x) / sizeof((_x)[0]))
+
 static inline uintptr_t align_to(uintptr_t addr, size_t align) {
 	return addr & ~(align - 1);
 }
@@ -257,16 +259,21 @@ static inline size_t userptr_alloc_size(void* userptr) {
 
 int smalloc_init(smalloc_t* alloc, const pa_t* pa) {
 	int res = 0;
+	size_t i = 0;
 
 	alloc->pa = *pa;
-	res |= slab_init(alloc->slabs, &alloc->pa, 32);
-	res |= slab_init(alloc->slabs + 1, &alloc->pa, 64);
-	res |= slab_init(alloc->slabs + 2, &alloc->pa, 128);
-	res |= slab_init(alloc->slabs + 3, &alloc->pa, 256);
-	res |= slab_init(alloc->slabs + 4, &alloc->pa, 512);
-	res |= slab_init(alloc->slabs + 5, &alloc->pa, 1024);
-	res |= slab_init(alloc->slabs + 6, &alloc->pa, 2048);
-	res |= slab_init(alloc->slabs + 7, &alloc->pa, 4096);
+	for (i = 0; i < ARR_SIZE(alloc->slabs); ++i) {
+		res = slab_init(alloc->slabs + i, &alloc->pa,
+		                MIN_ALIGNMENT << i);
+		if (res)
+			break;
+	}
+
+	if (res) {
+		size_t j;
+		for (j = 0; j < i; ++j)
+			slab_release(alloc->slabs + j);
+	}
 	return res;
 }
 
