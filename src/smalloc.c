@@ -239,7 +239,7 @@ static inline size_t round_alloc_size(size_t len) {
 	size_t rlen;
 
 	rlen = align_up(sizeof(allocation_t) + len, MIN_ALIGNMENT);
-	if (size2idx(rlen) < 8)
+	if (size2idx(rlen) < ARR_SIZE(((smalloc_t*)0)->slabs))
 		return rlen;
 
 	rlen = align_up(len, PAGE_SIZE);
@@ -361,17 +361,13 @@ void smalloc_free(smalloc_t* sm, void* userptr) {
 
 	ptr = user2alloc(userptr);
 	idx = size2idx(ptr->node->bsize);
-	if (idx < 8)
+	if (idx < ARR_SIZE(sm->slabs))
 		slab_free(sm->slabs + idx, ptr, ptr->node);
 }
 
 void smalloc_release(smalloc_t* sm) {
-	slab_release(sm->slabs);
-	slab_release(sm->slabs + 1);
-	slab_release(sm->slabs + 2);
-	slab_release(sm->slabs + 3);
-	slab_release(sm->slabs + 4);
-	slab_release(sm->slabs + 5);
-	slab_release(sm->slabs + 6);
-	slab_release(sm->slabs + 7);
+	size_t i;
+
+	for (i = 0; i < ARR_SIZE(sm->slabs); ++i)
+		slab_release(sm->slabs + i);
 }
