@@ -61,11 +61,11 @@ static void node_init(node_t* node, void* mem, size_t bsize,
 	}
 }
 
-static void node_set_full(node_t* node) {
+static inline void node_set_full(node_t* node) {
 	node->page = (void*)((uintptr_t)node->page | 1);
 }
 
-static int node_is_full(const node_t* node) {
+static inline int node_is_full(const node_t* node) {
 	return ((uintptr_t)node->page & 1) != 0;
 }
 
