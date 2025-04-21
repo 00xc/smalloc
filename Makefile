@@ -1,4 +1,4 @@
-CFLAGS += -Wall -Wextra -Wpedantic -fPIC -std=c99 -O3 -Iinclude/ -mlzcnt -ggdb
+CFLAGS += -Wall -Wextra -Wpedantic -fPIC -std=c99 -O2 -Iinclude/ -mlzcnt -ggdb
 LDFLAGS += -shared -fPIE
 
 SHARED_LIB = libsmalloc.so
