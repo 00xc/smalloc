@@ -12,6 +12,7 @@
 #define MAX_ACTIVE_ALLOCS 2048
 #define NUM_ROUNDS 60000000
 #define ALLOC_SIZE 64
+#define NUM_RANDS 8192
 
 #ifdef SMALLOC_EX_TRACE
 #	define TRACE_ALLOC(__ptr) printf("a %p\n", (void*)__ptr)
@@ -40,14 +41,18 @@ int* gen_rands() {
 	size_t i;
 	int* rands;
 
-	rands = malloc(NUM_ROUNDS * sizeof(int));
+	rands = malloc(NUM_RANDS * sizeof(int));
 	if (!rands)
 		return NULL;
 
 	srand(666);
-	for (i = 0; i < NUM_ROUNDS; ++i)
+	for (i = 0; i < NUM_RANDS; ++i)
 		rands[i] = rand();
 	return rands;
+}
+
+int get_rand(int* rands, size_t i) {
+	return rands[i % NUM_RANDS];
 }
 
 void run_glibc(int* rands) {
@@ -62,7 +67,7 @@ void run_glibc(int* rands) {
 		pointers[np++] = ptr;
 
 		if (np == MAX_ACTIVE_ALLOCS) {
-			int r = (rands[i] % MAX_ACTIVE_ALLOCS) + 1;
+			int r = (get_rand(rands, i) % MAX_ACTIVE_ALLOCS) + 1;
 			for (int v = 1; v <= r; ++v) {
 				TRACE_FREE((void*)pointers[MAX_ACTIVE_ALLOCS - v]);
 				free((void*)pointers[MAX_ACTIVE_ALLOCS - v]);
@@ -97,7 +102,7 @@ void run_smalloc(int* rands) {
 		pointers[np++] = ptr;
 
 		if (np == MAX_ACTIVE_ALLOCS) {
-			int r = (rands[i] % MAX_ACTIVE_ALLOCS) + 1;
+			int r = (get_rand(rands, i) % MAX_ACTIVE_ALLOCS) + 1;
 			for (int v = 1; v <= r; ++v) {
 				TRACE_FREE((void*)pointers[MAX_ACTIVE_ALLOCS - v]);
 				smalloc_free(&sm, (void*)pointers[MAX_ACTIVE_ALLOCS - v]);
