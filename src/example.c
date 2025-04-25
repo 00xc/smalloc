@@ -24,7 +24,7 @@
 
 static unsigned char volatile* pointers[MAX_ACTIVE_ALLOCS] = {0};
 
-void* alloc_page(void* opaque) {
+static void* alloc_page(void* opaque) {
 	void* page = NULL;
 
 	(void)opaque;
@@ -34,7 +34,7 @@ void* alloc_page(void* opaque) {
 	return page;
 }
 
-void free_page(void* opaque, void* page) {
+static void free_page(void* opaque, void* page) {
 	(void)opaque;
 	free(page);
 }
@@ -44,7 +44,7 @@ static pa_t pa = {
 	.free_page = free_page,
 };
 
-int* gen_rands() {
+static int* gen_rands() {
 	size_t i;
 	int* rands;
 
@@ -58,11 +58,11 @@ int* gen_rands() {
 	return rands;
 }
 
-int get_rand(int* rands, size_t i) {
+static int get_rand(int* rands, size_t i) {
 	return rands[i % NUM_RANDS];
 }
 
-void run_glibc(int* rands) {
+static void run_glibc(int* rands) {
 	size_t i, np = 0;
 
 	for (i = 0; i < NUM_ROUNDS; ++i) {
@@ -87,7 +87,7 @@ void run_glibc(int* rands) {
 	}
 }
 
-void run_smalloc(int* rands) {
+static void run_smalloc(int* rands) {
 	size_t i, np = 0;
 	smalloc_t sm;
 
@@ -118,12 +118,12 @@ void run_smalloc(int* rands) {
 	smalloc_release(&sm);
 }
 
-int usage(const char* name) {
+static int usage(const char* name) {
 	fprintf(stderr, "%s <smalloc | libc>\n", name);
 	return EXIT_FAILURE;
 }
 
-int parse_args(int argc, const char* argv[]) {
+static int parse_args(int argc, const char* argv[]) {
 	if (argc < 2)
 		return -1;
 
