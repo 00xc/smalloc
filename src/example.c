@@ -22,6 +22,8 @@
 #	define TRACE_FREE(__ptr) do {} while(0)
 #endif
 
+static unsigned char volatile* pointers[MAX_ACTIVE_ALLOCS] = {0};
+
 void* alloc_page(void* opaque) {
 	void* page = NULL;
 
@@ -36,6 +38,11 @@ void free_page(void* opaque, void* page) {
 	(void)opaque;
 	free(page);
 }
+
+static pa_t pa = {
+	.alloc_page = alloc_page,
+	.free_page = free_page,
+};
 
 int* gen_rands() {
 	size_t i;
@@ -56,9 +63,7 @@ int get_rand(int* rands, size_t i) {
 }
 
 void run_glibc(int* rands) {
-	size_t i;
-	unsigned char volatile* pointers[MAX_ACTIVE_ALLOCS] = {0};
-	size_t np = 0;
+	size_t i, np = 0;
 
 	for (i = 0; i < NUM_ROUNDS; ++i) {
 		unsigned char volatile* ptr = malloc(ALLOC_SIZE);
@@ -83,13 +88,7 @@ void run_glibc(int* rands) {
 }
 
 void run_smalloc(int* rands) {
-	size_t i;
-	unsigned char volatile* pointers[MAX_ACTIVE_ALLOCS] = {0};
-	size_t np = 0;
-	pa_t pa = {
-		.alloc_page = alloc_page,
-		.free_page = free_page,
-	};
+	size_t i, np = 0;
 	smalloc_t sm;
 
 	if (smalloc_init(&sm, &pa))
