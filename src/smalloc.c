@@ -276,16 +276,16 @@ int smalloc_init(smalloc_t* alloc, const pa_t* pa) {
 	return res;
 }
 
-static void* smalloc_big_alloc(smalloc_t* sm, size_t len) {
+static void* smalloc_big_alloc(pa_t* pa, size_t len) {
 	size_t num_pages = align_up(len, PAGE_SIZE) / PAGE_SIZE;
 
 	if (num_pages == 1)
-		return sm->pa.alloc_page(sm->pa.opaque);
+		return pa->alloc_page(pa->opaque);
 	return NULL;
 }
 
-static void smalloc_big_free(smalloc_t* sm, void* userptr) {
-	sm->pa.free_page(sm->pa.opaque, userptr);
+static void smalloc_big_free(pa_t* pa, void* userptr) {
+	pa->free_page(pa->opaque, userptr);
 }
 
 void* smalloc_alloc(smalloc_t* sm, size_t len) {
@@ -301,7 +301,7 @@ void* smalloc_alloc(smalloc_t* sm, size_t len) {
 		return NULL;
 
 	if (rlen == PAGE_SIZE)
-		return smalloc_big_alloc(sm, len);
+		return smalloc_big_alloc(&sm->pa, len);
 
 	idx = size2idx(rlen);
 	ptr = (allocation_t*)slab_alloc(sm->slabs + idx, &node);
@@ -354,7 +354,7 @@ void smalloc_free(smalloc_t* sm, void* userptr) {
 		return;
 
 	if (page_aligned((uintptr_t)userptr)) {
-		smalloc_big_free(sm, userptr);
+		smalloc_big_free(&sm->pa, userptr);
 		return;
 	}
 
