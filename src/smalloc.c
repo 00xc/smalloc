@@ -162,7 +162,7 @@ static void* slab_alloc(slab_t* slab, node_t** outnode) {
 	node_t* node = slab->lowest_free;
 	void* out;
 
-	while (1) {
+	do {
 		/* Try to allocate from the current node, otherwise try with
 		   the next one */
 		out = node_alloc(node);
@@ -172,14 +172,13 @@ static void* slab_alloc(slab_t* slab, node_t** outnode) {
 			return out;
 		}
 
-		if (!node->next) {
+		if (!node->next)
 			node->next = slab_next_node(slab, node);
-			if (!node->next)
-				return NULL;
-		}
 
 		node = node->next;
-	}
+	} while (node);
+
+	return NULL;
 }
 
 static void slab_free(slab_t* slab, void* ptr, node_t* node) {
